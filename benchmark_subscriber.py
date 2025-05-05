@@ -11,12 +11,13 @@ from typing import Any, Dict, List, Tuple
 
 import ecal.core.core as ecal_core
 import yaml
-from bench_pb2 import Bench
-from benchmark import LCMHandshake, compute_stats
 
 # NOTE: see relevant note about ProtoSubscriber in eCALSubscriber below
 # from ecal.core.subscriber import ProtoSubscriber
 from lcm import LCM
+
+from bench_pb2 import Bench
+from benchmark import LCMHandshake, compute_stats
 from lcmtypes import bench_t
 
 logger = logging.getLogger(__name__)
@@ -252,6 +253,12 @@ if __name__ == "__main__":
         type=str,
         default="",
         help='Optional path to a log file. If value is None or "" then will log to stdout/stderr (default=None)',
+    )
+    parser.add_argument(
+        "--ecal-ini-file",
+        type=Path,
+        default=Path("/etc/ecal/ecal.ini"),
+        help="Optional path to the ecal.ini file to use for this process",
     )
     args = parser.parse_args()
 

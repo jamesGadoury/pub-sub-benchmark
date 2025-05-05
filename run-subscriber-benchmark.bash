@@ -21,7 +21,8 @@ for MIDDLEWARE in lcm ecal; do
     echo " • [${i}/8] subscribe to ${NUM_MSGS} messages via ${MIDDLEWARE}"
     "${PYTHON_INTERPRETER}" benchmark_subscriber.py \
       --middleware "${MIDDLEWARE}" \
-      --num-msgs "${NUM_MSGS}"
+      --num-msgs "${NUM_MSGS}" \
+      --ecal-ini-file ./ecal.ini
     sleep "${SLEEP_TIME}"
   done
   echo
