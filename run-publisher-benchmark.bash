@@ -24,7 +24,8 @@ for SIZE_KIB in 1 2 4 8 16 32 64 128; do
     --middleware lcm \
     --num-msgs "${NUM_MSGS}" \
     --num-bytes "${BYTES}" \
-    --transmission-rate "${TRANSMISSION_RATE}"
+    --transmission-rate "${TRANSMISSION_RATE}" \
+    --ecal-ini-file ./ecal.ini
 done
 
 echo "------------------------------------------------------------------------------------------------------------------------------"
@@ -36,5 +37,6 @@ for SIZE_KIB in 1 2 4 8 16 32 64 128; do
     --middleware ecal \
     --num-msgs "${NUM_MSGS}" \
     --num-bytes "${BYTES}" \
-    --transmission-rate "${TRANSMISSION_RATE}"
+    --transmission-rate "${TRANSMISSION_RATE}" \
+    --ecal-ini-file ./ecal.ini
 done
