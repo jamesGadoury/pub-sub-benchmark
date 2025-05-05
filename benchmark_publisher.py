@@ -8,6 +8,11 @@ from typing import Any, Dict, List
 
 import ecal.core.core as ecal_core
 import yaml
+
+# NOTE: see relevant note about ProtoPublisher in eCALPublisher below
+# from ecal.core.publisher import ProtoPublisher
+from lcm import LCM
+
 from bench_pb2 import Bench
 from benchmark import (
     LCMHandshake,
@@ -16,10 +21,6 @@ from benchmark import (
     generate_lcm_benchmark_msg,
     generate_proto_benchmark_msg,
 )
-
-# NOTE: see relevant note about ProtoPublisher in eCALPublisher below
-# from ecal.core.publisher import ProtoPublisher
-from lcm import LCM
 from lcmtypes import bench_t
 
 logger = logging.getLogger(__name__)
@@ -247,6 +248,13 @@ if __name__ == "__main__":
         type=str,
         default="",
         help='Optional path to a log file. If value is None or "" then will log to stdout/stderr (default=None)',
+    )
+
+    parser.add_argument(
+        "--ecal-ini-file",
+        type=Path,
+        default=Path("/etc/ecal/ecal.ini"),
+        help="Optional path to the ecal.ini file to use for this process",
     )
     args = parser.parse_args()
 
