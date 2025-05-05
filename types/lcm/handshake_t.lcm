@@ -1,0 +1,5 @@
+package lcmtypes;
+
+struct handshake_t {
+    int32_t  pid;
+}

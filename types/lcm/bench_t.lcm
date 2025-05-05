@@ -1,0 +1,8 @@
+package lcmtypes;
+
+struct bench_t
+{
+    int32_t num_bytes;
+    byte blob[num_bytes];
+    int64_t creation_timestamp_ns; // nanoseconds since UNIX epoch
+}

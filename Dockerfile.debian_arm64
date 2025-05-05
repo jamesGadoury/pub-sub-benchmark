@@ -1,0 +1,34 @@
+# Dockerfile.debian_arm64
+FROM debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 1) Install 'file' (for CPack), Python, venv, pip, LCM, and build deps
+RUN apt-get update && apt-get install -y \
+  file python3-pip python3-venv python3-numpy python3-yaml liblcm-dev git cmake doxygen graphviz build-essential zlib1g-dev qtbase5-dev libhdf5-dev libprotobuf-dev libprotoc-dev protobuf-compiler libcurl4-openssl-dev libqwt-qt5-dev libyaml-cpp-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+# 2) Clone & compile eCAL v5.13
+RUN git clone https://github.com/eclipse-ecal/ecal.git -b support/v5.13 /opt/ecal \
+ && cd /opt/ecal \
+ && git submodule update --init --recursive \
+ && mkdir build && cd build \
+ && cmake .. \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DECAL_THIRDPARTY_BUILD_PROTOBUF=OFF \
+      -DECAL_THIRDPARTY_BUILD_CURL=OFF \
+      -DECAL_THIRDPARTY_BUILD_HDF5=OFF \
+      -DECAL_THIRDPARTY_BUILD_QWT=OFF \
+      -DBUILD_PY_BINDING=ON \
+ && make -j"$(nproc)" \
+ # 3) Package and install eCAL via .deb:
+ && cpack -G DEB \
+ && dpkg -i _deploy/eCAL-*.deb \
+ && ldconfig \
+ # 4) Build the Python wheel, then force‐install despite PEP 668
+ && cmake --build . --target create_python_wheel --config Release \
+ && pip3 install --break-system-packages _deploy/ecal5-*.whl \
+ && pip3 install --break-system-packages lcm
+
+WORKDIR /workspace
+CMD ["bash"]
