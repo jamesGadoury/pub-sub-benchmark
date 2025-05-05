@@ -52,7 +52,7 @@ Mount your workspace into the container and execute the scripts:
 ### Publisher
 
 ```bash
-docker run --rm -it --network=host \
+docker run --rm -it --privileged --network=host --ipc=host \
   -v "$(pwd)":/workspace \
   bench-ubuntu-x86_64 \
   bash -lc "cd /workspace && ./run-publisher-benchmark.bash"
@@ -63,7 +63,7 @@ docker run --rm -it --network=host \
 ### Subscriber
 
 ```bash
-docker run --rm -it --network=host \
+docker run --rm -it --privileged --network=host --ipc=host \
   -v "$(pwd)":/workspace \
   bench-ubuntu-x86_64 \
   bash -lc "cd /workspace && ./run-subscriber-benchmark.bash"
