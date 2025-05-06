@@ -154,6 +154,7 @@ def main(
 
     if isinstance(results_dir, str):
         results_dir = Path(results_dir)
+    results_dir = results_dir / str(time_ns())
     results_dir.mkdir(parents=True, exist_ok=True)
 
     if middleware == "lcm":

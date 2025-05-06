@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 from time import perf_counter, sleep
 from time import time as now
+from time import time_ns
 from typing import Any, Dict, List
 
 import ecal.core.core as ecal_core
@@ -121,6 +122,7 @@ def main(
 
     if isinstance(results_dir, str):
         results_dir = Path(results_dir)
+    results_dir = results_dir / str(time_ns())
     results_dir.mkdir(parents=True, exist_ok=True)
 
     if middleware == "lcm":

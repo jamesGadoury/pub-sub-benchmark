@@ -12,13 +12,13 @@ esac
 if [[ "$ARCH_TAG" == "arm64" ]]; then
     docker run --rm -it --privileged --network=host --ipc=host \
     -e LCM_DEFAULT_URL=udpm://239.255.76.67:7667?ttl=1 \
-    -v "$(pwd)":/workspace \
+    -v /tmp/subscriber-benchmark-results/:/tmp/subscriber-benchmark-results/ \
     bench-debian-arm64 \
     bash -lc "cd /workspace && ./run-subscriber-benchmark.bash"
 else
     docker run --rm -it --privileged --network=host --ipc=host \
     -e LCM_DEFAULT_URL=udpm://239.255.76.67:7667?ttl=1 \
-    -v "$(pwd)":/workspace \
+    -v /tmp/subscriber-benchmark-results/:/tmp/subscriber-benchmark-results/ \
     bench-ubuntu-x86_64 \
     bash -lc "cd /workspace && ./run-subscriber-benchmark.bash"
 fi
