@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Tuple
 
 import ecal.core.core as ecal_core
 import yaml
-
 # NOTE: see relevant note about ProtoSubscriber in eCALSubscriber below
 # from ecal.core.subscriber import ProtoSubscriber
 from lcm import LCM

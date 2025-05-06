@@ -8,19 +8,14 @@ from typing import Any, Dict, List
 
 import ecal.core.core as ecal_core
 import yaml
-
 # NOTE: see relevant note about ProtoPublisher in eCALPublisher below
 # from ecal.core.publisher import ProtoPublisher
 from lcm import LCM
 
 from bench_pb2 import Bench
-from benchmark import (
-    LCMHandshake,
-    compute_stats,
-    eCALMonitor,
-    generate_lcm_benchmark_msg,
-    generate_proto_benchmark_msg,
-)
+from benchmark import (LCMHandshake, compute_stats, eCALMonitor,
+                       generate_lcm_benchmark_msg,
+                       generate_proto_benchmark_msg)
 from lcmtypes import bench_t
 
 logger = logging.getLogger(__name__)

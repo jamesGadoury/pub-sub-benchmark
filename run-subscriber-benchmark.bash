@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 # Usage: ./run-subscriber-benchmark.sh [python_interpreter] [num_msgs]
+#   num_msgs: how many messages each subscriber run should consume (default: 51)
 #   python_interpreter: which python to use (default: python3)
-#   num_msgs: how many messages each subscriber run should consume (default: 6)
 
-PYTHON_INTERPRETER="${1:-python3}"
-NUM_MSGS="${2:-6}"
-SLEEP_TIME="1s"
+NUM_MSGS="${1:-51}"
+PYTHON_INTERPRETER="${2:-python3}"
+SLEEP_TIME="2s"
 
 echo "Important: Make sure you run run-publisher-benchmark.bash first."
 echo "First message in each run is ignored in saved reports due to setup overhead."
-echo "Interpreter: ${PYTHON_INTERPRETER}"
 echo "Messages per run: ${NUM_MSGS} (NOTE THAT THIS MUST BE THE SAME VALUE AS run-publisher-benchmark.bash)"
+echo "Interpreter: ${PYTHON_INTERPRETER}"
 echo
 
 for MIDDLEWARE in lcm ecal; do
