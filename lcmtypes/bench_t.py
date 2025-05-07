@@ -9,11 +9,11 @@ import struct
 
 class bench_t(object):
 
-    __slots__ = ["num_bytes", "blob", "creation_timestamp_ns"]
+    __slots__ = ["num_bytes", "blob", "creation_timestamp_ns", "total_number_of_messages", "message_number"]
 
-    __typenames__ = ["int32_t", "byte", "int64_t"]
+    __typenames__ = ["int32_t", "byte", "int64_t", "int32_t", "int32_t"]
 
-    __dimensions__ = [None, ["num_bytes"], None]
+    __dimensions__ = [None, ["num_bytes"], None, None, None]
 
     def __init__(self):
         self.num_bytes = 0
@@ -22,6 +22,14 @@ class bench_t(object):
         """ LCM Type: byte[num_bytes] """
         self.creation_timestamp_ns = 0
         """ LCM Type: int64_t """
+        self.total_number_of_messages = 0
+        """
+        nanoseconds since UNIX epoch
+        LCM Type: int32_t
+        """
+
+        self.message_number = 0
+        """ LCM Type: int32_t """
 
     def encode(self):
         buf = BytesIO()
@@ -32,7 +40,7 @@ class bench_t(object):
     def _encode_one(self, buf):
         buf.write(struct.pack(">i", self.num_bytes))
         buf.write(bytearray(self.blob[:self.num_bytes]))
-        buf.write(struct.pack(">q", self.creation_timestamp_ns))
+        buf.write(struct.pack(">qii", self.creation_timestamp_ns, self.total_number_of_messages, self.message_number))
 
     @staticmethod
     def decode(data: bytes):
@@ -49,13 +57,13 @@ class bench_t(object):
         self = bench_t()
         self.num_bytes = struct.unpack(">i", buf.read(4))[0]
         self.blob = buf.read(self.num_bytes)
-        self.creation_timestamp_ns = struct.unpack(">q", buf.read(8))[0]
+        self.creation_timestamp_ns, self.total_number_of_messages, self.message_number = struct.unpack(">qii", buf.read(16))
         return self
 
     @staticmethod
     def _get_hash_recursive(parents):
         if bench_t in parents: return 0
-        tmphash = (0x3b788e96a62baede) & 0xffffffffffffffff
+        tmphash = (0x325d6fc95d4b1fb0) & 0xffffffffffffffff
         tmphash  = (((tmphash<<1)&0xffffffffffffffff) + (tmphash>>63)) & 0xffffffffffffffff
         return tmphash
     _packed_fingerprint = None

@@ -2,7 +2,10 @@ package lcmtypes;
 
 struct bench_t
 {
-    int32_t num_bytes;
-    byte blob[num_bytes];
-    int64_t creation_timestamp_ns; // nanoseconds since UNIX epoch
+    int32_t    num_bytes;
+    byte       blob[num_bytes];
+    int64_t    creation_timestamp_ns;    // nanoseconds since UNIX epoch
+
+    int32_t    total_number_of_messages;
+    int32_t    message_number;
 }

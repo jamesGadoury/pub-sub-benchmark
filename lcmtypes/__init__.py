@@ -6,3 +6,4 @@ lcm-gen 1.5.1
 
 from .bench_t import bench_t as bench_t
 from .handshake_t import handshake_t as handshake_t
+from .status_t import status_t as status_t
