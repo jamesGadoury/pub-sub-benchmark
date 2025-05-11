@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
   libhdf5-dev libprotobuf-dev libprotoc-dev \
   protobuf-compiler libcurl4-openssl-dev \
   libqwt-qt5-dev libyaml-cpp-dev vim \
-  iperf3 netcat-openbsd \
+  iperf iperf3 netcat-openbsd iproute2 \
   && rm -rf /var/lib/apt/lists/*
 
 # 2) Clone & compile eCAL v5.13
