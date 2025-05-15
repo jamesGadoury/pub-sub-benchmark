@@ -7,13 +7,13 @@ import pandas as pd
 import yaml
 
 
-def load_reports(input_folder: Path) -> pd.DataFrame:
+def load_reports(input_dir: Path) -> pd.DataFrame:
     rows = []
-    for filepath in input_folder.glob("*.yaml"):
+    for filepath in input_dir.glob("*.yaml"):
         report = yaml.safe_load(filepath.read_text())
         params = report.get("parameters", {})
 
-        # message size
+        # determine message size (bytes)
         msg_size = params.get("num_bytes") or report.get(
             "num_bytes_statistics", {}
         ).get("mean_bytes")
@@ -26,103 +26,176 @@ def load_reports(input_folder: Path) -> pd.DataFrame:
             "num_bytes": msg_size,
         }
 
-        # collect all stat dicts under a prefix
+        # all the statistics dicts we care about
         stat_dicts = {
-            "pub_rate": report.get("actual_transmission_rate_statistics", {}),
-            "pub_dur": report.get("publish_duration_statistics", {}),
-            "ser": report.get("serialization_duration_statistics", {}),
-            "sub_rate": report.get("processing_rate_statistics")
-            or report.get("actual_processing_rate_statistics_hz", {}),
-            "handle": report.get("handle_duration_statistics", {}),
-            "decode": report.get("decode_duration_statistics", {}),
-            "latency": report.get("oneway_latency_statistics", {}),
+            "actual_transmission_rate_statistics": report.get(
+                "actual_transmission_rate_statistics", {}
+            ),
+            "publish_duration_statistics": report.get(
+                "publish_duration_statistics", {}
+            ),
+            "serialization_duration_statistics": report.get(
+                "serialization_duration_statistics", {}
+            ),
+            "end_to_end_throughput_statistics": report.get(
+                "end_to_end_throughput_statistics", {}
+            ),
+            "handle_duration_statistics": report.get("handle_duration_statistics", {}),
+            "decode_duration_statistics": report.get("decode_duration_statistics", {}),
+            "oneway_latency_statistics": report.get("oneway_latency_statistics", {}),
         }
 
-        # flatten into base row
+        # flatten them, renaming any stddev_* → std_*
         for prefix, stats in stat_dicts.items():
             for stat_name, value in stats.items():
-                base[f"{prefix}_{stat_name}"] = value
+                # normalize stddev → std
+                norm = stat_name.replace("stddev", "std")
+                col = f"{prefix}_{norm}"
+                base[col] = value
 
         rows.append(base)
 
     return pd.DataFrame(rows)
 
 
-def plot_percentiles(df: pd.DataFrame, output_folder: Path):
+def plot_percentiles(df: pd.DataFrame, output_dir: Path, show: bool):
     metrics_labels = {
-        "pub_rate": "Publisher Rate (Hz)",
-        "sub_rate": "Subscriber Rate (Hz)",
-        "pub_dur": "Publish Duration (ms)",
-        "ser": "Serialization Duration (ms)",
-        "handle": "Handle Duration (ms)",
-        "decode": "Decode Duration (ms)",
-        "latency": "One-way Latency (ms)",
+        "actual_transmission_rate_statistics": "Publisher Rate (Hz)",
+        "end_to_end_throughput_statistics": "End To End Throughput (Hz)",
+        "publish_duration_statistics": "Publish Duration (ms)",
+        "serialization_duration_statistics": "Serialization Duration (ms)",
+        "handle_duration_statistics": "Handle Duration (ms)",
+        "decode_duration_statistics": "Decode Duration (ms)",
+        "oneway_latency_statistics": "One-way Latency (ms)",
     }
     percentiles = ["p50", "p90"]
 
+    # discrete x-axis: sorted unique sizes in KiB
+    sizes_kib = sorted(df["num_bytes"].unique() / 1024.0)
+    mw_list = df["middleware"].dropna().unique()
+    n_mw = len(mw_list)
+    width = 0.8 / n_mw
+
     for key, label in metrics_labels.items():
         for perc in percentiles:
-            # determine the full column name
-            suffix = "_hz" if "rate" in key else "_ms"
-            col = f"{key}_{perc}{suffix}"
-            if col not in df.columns:
+            # NOTE: lol ... garbage
+            unit = "hz" if "(Hz)" in label else ("ms" if "(ms)" in label else "")
+            col = f"{key}_{perc}_{unit}"
+            if col not in df:
+                print(f"Did not find {col=}")
                 continue
 
             plt.figure()
-            for middleware in df["middleware"].dropna().unique():
-                sub = df[df["middleware"] == middleware].sort_values("num_bytes")
-                # convert bytes → KiB
-                x_kib = sub["num_bytes"] / 1024.0
-                plt.scatter(
-                    x_kib,
-                    sub[col],
-                    marker="o",
-                    label=middleware,
-                )
+            for i, mw in enumerate(mw_list):
+                vals = []
+                for s in sizes_kib:
+                    sub = df[
+                        (df["middleware"] == mw) & ((df["num_bytes"] / 1024.0) == s)
+                    ]
+                    vals.append(sub[col].mean() if not sub.empty else 0.0)
 
+                x = [j + i * width for j in range(len(sizes_kib))]
+                plt.bar(x, vals, width=width, label=mw)
+
+            centers = [j + width * (n_mw - 1) / 2 for j in range(len(sizes_kib))]
+            plt.xticks(centers, [f"{s:.1f}" for s in sizes_kib])
             plt.xlabel("Message Size (KiB)")
             plt.ylabel(label)
             plt.title(f"{label} ({perc}) vs. Message Size")
+            plt.grid(axis="y", linestyle="--", alpha=0.5)
             plt.legend()
-            plt.grid(True)
             plt.tight_layout()
-            plt.savefig(output_folder / f"{key}_{perc}_vs_msg_size.png")
-            plt.show()
+            plt.savefig(output_dir / f"{key}_{perc}_vs_msg_size.png")
+            if show:
+                plt.show()
             plt.close()
+
+
+def plot_mean_std(df: pd.DataFrame, output_dir: Path, show: bool):
+    metrics_labels = {
+        "actual_transmission_rate_statistics": "Publisher Rate (Hz)",
+        "end_to_end_throughput_statistics": "End To End Throughput (Hz)",
+        "publish_duration_statistics": "Publish Duration (ms)",
+        "serialization_duration_statistics": "Serialization Duration (ms)",
+        "handle_duration_statistics": "Handle Duration (ms)",
+        "decode_duration_statistics": "Decode Duration (ms)",
+        "oneway_latency_statistics": "One-way Latency (ms)",
+    }
+
+    sizes_kib = sorted(df["num_bytes"].unique() / 1024.0)
+    mw_list = df["middleware"].dropna().unique()
+    n_mw = len(mw_list)
+    width = 0.8 / n_mw
+
+    for key, label in metrics_labels.items():
+        # TODO: lol, garbage
+        unit = "hz" if "(Hz)" in label else ("ms" if "(ms)" in label else "")
+        mean_col = f"{key}_mean_{unit}"
+        std_col = f"{key}_std_{unit}"
+        if mean_col not in df or std_col not in df:
+            print(f"Did not find {mean_col=} or {std_col=}")
+            continue
+
+        plt.figure()
+        for i, mw in enumerate(mw_list):
+            means, stds = [], []
+            for s in sizes_kib:
+                sub = df[(df["middleware"] == mw) & ((df["num_bytes"] / 1024.0) == s)]
+                if not sub.empty:
+                    means.append(sub[mean_col].mean())
+                    stds.append(sub[std_col].mean())
+                else:
+                    means.append(0.0)
+                    stds.append(0.0)
+
+            x = [j + i * width for j in range(len(sizes_kib))]
+            plt.bar(x, means, width=width, yerr=stds, capsize=4, label=mw)
+
+        centers = [j + width * (n_mw - 1) / 2 for j in range(len(sizes_kib))]
+        plt.xticks(centers, [f"{s:.1f}" for s in sizes_kib])
+        plt.xlabel("Message Size (KiB)")
+        plt.ylabel(label)
+        plt.title(f"{label} Mean ± STD vs. Message Size")
+        plt.grid(axis="y", linestyle="--", alpha=0.5)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(output_dir / f"{key}_mean_std_vs_msg_size.png")
+        if show:
+            plt.show()
+        plt.close()
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Aggregate LCM/eCAL benchmark reports and plot p50/p90 stats"
+        description="Aggregate LCM/eCAL benchmark reports and plot stats"
     )
+    parser.add_argument("input_dir", type=Path, help="YAML reports directory")
+    parser.add_argument("output_dir", type=Path, help="Where to write CSV + plots")
     parser.add_argument(
-        "--input-folder",
-        type=Path,
-        default=Path("./results"),
-        help="Directory containing YAML benchmark reports",
-    )
-    parser.add_argument(
-        "--output-folder",
-        type=Path,
-        default=Path("./results"),
-        help="Directory to write aggregated CSV and plots",
+        "--show", action="store_true", help="Display plots interactively"
     )
     args = parser.parse_args()
 
-    args.output_folder.mkdir(parents=True, exist_ok=True)
-    df = load_reports(args.input_folder)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    df = load_reports(args.input_dir)
     if df.empty:
-        print(f"No valid reports found in {args.input_folder}")
+        print(f"No valid reports found in {args.input_dir}")
         return
 
-    # 1) Write aggregated CSV
-    csv_file = args.output_folder / "aggregated.csv"
+    # ─── collapse duplicate runs by middleware & message size ───
+    df = df.groupby(["middleware", "num_bytes"], as_index=False).mean()
+
+    # 1) write out aggregated CSV
+    csv_file = args.output_dir / "aggregated.csv"
     df.to_csv(csv_file, index=False)
     print(f"Saved aggregated data to {csv_file}")
 
-    # 2) Plot separate p50 & p90 plots for each metric
-    plot_percentiles(df, args.output_folder)
-    print(f"Plots saved to {args.output_folder}")
+    # 2) percentiles
+    plot_percentiles(df, args.output_dir, show=args.show)
+    # 3) mean ± std
+    plot_mean_std(df, args.output_dir, show=args.show)
+
+    print(f"All plots saved to {args.output_dir}")
 
 
 if __name__ == "__main__":

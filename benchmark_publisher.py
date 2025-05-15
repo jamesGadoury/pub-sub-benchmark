@@ -4,23 +4,19 @@ from argparse import ArgumentParser
 from pathlib import Path
 from time import perf_counter, sleep
 from time import time as now
+from time import time_ns
 from typing import Any, Dict, List
 
 import ecal.core.core as ecal_core
 import yaml
-
 # NOTE: see relevant note about ProtoPublisher in eCALPublisher below
 # from ecal.core.publisher import ProtoPublisher
 from lcm import LCM
 
 from bench_pb2 import Bench
-from benchmark import (
-    LCMHandshake,
-    compute_stats,
-    eCALMonitor,
-    generate_lcm_benchmark_msg,
-    generate_proto_benchmark_msg,
-)
+from benchmark import (LCMHandshake, compute_stats, eCALMonitor,
+                       generate_lcm_benchmark_msg,
+                       generate_proto_benchmark_msg)
 from lcmtypes import bench_t
 
 logger = logging.getLogger(__name__)
@@ -126,6 +122,7 @@ def main(
 
     if isinstance(results_dir, str):
         results_dir = Path(results_dir)
+    results_dir = results_dir / str(time_ns())
     results_dir.mkdir(parents=True, exist_ok=True)
 
     if middleware == "lcm":
