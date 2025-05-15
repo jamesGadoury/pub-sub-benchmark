@@ -37,7 +37,9 @@ def load_reports(input_dir: Path) -> pd.DataFrame:
             "serialization_duration_statistics": report.get(
                 "serialization_duration_statistics", {}
             ),
-            "processing_rate_statistics": report.get("processing_rate_statistics", {}),
+            "end_to_end_throughput_statistics": report.get(
+                "end_to_end_throughput_statistics", {}
+            ),
             "handle_duration_statistics": report.get("handle_duration_statistics", {}),
             "decode_duration_statistics": report.get("decode_duration_statistics", {}),
             "oneway_latency_statistics": report.get("oneway_latency_statistics", {}),
@@ -59,7 +61,7 @@ def load_reports(input_dir: Path) -> pd.DataFrame:
 def plot_percentiles(df: pd.DataFrame, output_dir: Path, show: bool):
     metrics_labels = {
         "actual_transmission_rate_statistics": "Publisher Rate (Hz)",
-        "processing_rate_statistics": "Subscriber Response Rate (Hz)",
+        "end_to_end_throughput_statistics": "End To End Throughput (Hz)",
         "publish_duration_statistics": "Publish Duration (ms)",
         "serialization_duration_statistics": "Serialization Duration (ms)",
         "handle_duration_statistics": "Handle Duration (ms)",
@@ -76,9 +78,11 @@ def plot_percentiles(df: pd.DataFrame, output_dir: Path, show: bool):
 
     for key, label in metrics_labels.items():
         for perc in percentiles:
-            suffix = "_hz" if "rate" in key else "_ms"
-            col = f"{key}_{perc}{suffix}"
+            # NOTE: lol ... garbage
+            unit = "hz" if "(Hz)" in label else ("ms" if "(ms)" in label else "")
+            col = f"{key}_{perc}_{unit}"
             if col not in df:
+                print(f"Did not find {col=}")
                 continue
 
             plt.figure()
@@ -110,7 +114,7 @@ def plot_percentiles(df: pd.DataFrame, output_dir: Path, show: bool):
 def plot_mean_std(df: pd.DataFrame, output_dir: Path, show: bool):
     metrics_labels = {
         "actual_transmission_rate_statistics": "Publisher Rate (Hz)",
-        "processing_rate_statistics": "Subscriber Response Rate (Hz)",
+        "end_to_end_throughput_statistics": "End To End Throughput (Hz)",
         "publish_duration_statistics": "Publish Duration (ms)",
         "serialization_duration_statistics": "Serialization Duration (ms)",
         "handle_duration_statistics": "Handle Duration (ms)",
@@ -124,10 +128,12 @@ def plot_mean_std(df: pd.DataFrame, output_dir: Path, show: bool):
     width = 0.8 / n_mw
 
     for key, label in metrics_labels.items():
-        suffix = "_hz" if "rate" in key else "_ms"
-        mean_col = f"{key}_mean{suffix}"
-        std_col = f"{key}_std{suffix}"
+        # TODO: lol, garbage
+        unit = "hz" if "(Hz)" in label else ("ms" if "(ms)" in label else "")
+        mean_col = f"{key}_mean_{unit}"
+        std_col = f"{key}_std_{unit}"
         if mean_col not in df or std_col not in df:
+            print(f"Did not find {mean_col=} or {std_col=}")
             continue
 
         plt.figure()

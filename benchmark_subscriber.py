@@ -197,12 +197,10 @@ def main(
     oneway_latency_stats = compute_stats(oneway_latency_durs_ms, "ms")
     size_stats = compute_stats(sizes, "bytes")
 
-    processing_rates_hz = [
-        1.0 / (t2 - t1)
-        for t1, t2 in zip(creation_timestamps_s, creation_timestamps_s[1:])
-        if (t2 - t1) > 0
+    end_to_end_throughput_hz = [
+        1.0 / (lat_ms / 1000.0) for lat_ms in oneway_latency_durs_ms if lat_ms > 0
     ]
-    processing_rate_stats = compute_stats(processing_rates_hz, "hz")
+    end_to_end_throughput_stats = compute_stats(end_to_end_throughput_hz, "hz")
 
     report: Dict[str, Any] = {
         "timestamp_us": int(now() * 1e6),
@@ -220,8 +218,8 @@ def main(
         "oneway_latency_statistics": oneway_latency_stats,
         "num_bytes_list": sizes,
         "num_bytes_statistics": size_stats,
-        "processing_rates_hz": processing_rates_hz,
-        "processing_rate_statistics": processing_rate_stats,
+        "end_to_end_throughput_hz": end_to_end_throughput_hz,
+        "end_to_end_throughput_statistics": end_to_end_throughput_stats,
     }
 
     out = (
