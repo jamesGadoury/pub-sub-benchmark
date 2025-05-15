@@ -7,9 +7,9 @@ import pandas as pd
 import yaml
 
 
-def load_reports(input_folder: Path) -> pd.DataFrame:
+def load_reports(input_dir: Path) -> pd.DataFrame:
     rows = []
-    for filepath in input_folder.glob("*.yaml"):
+    for filepath in input_dir.glob("*.yaml"):
         report = yaml.safe_load(filepath.read_text())
         params = report.get("parameters", {})
 
@@ -28,14 +28,19 @@ def load_reports(input_folder: Path) -> pd.DataFrame:
 
         # collect all stat dicts under a prefix
         stat_dicts = {
-            "pub_rate": report.get("actual_transmission_rate_statistics", {}),
-            "pub_dur": report.get("publish_duration_statistics", {}),
-            "ser": report.get("serialization_duration_statistics", {}),
-            "sub_rate": report.get("processing_rate_statistics")
-            or report.get("actual_processing_rate_statistics_hz", {}),
-            "handle": report.get("handle_duration_statistics", {}),
-            "decode": report.get("decode_duration_statistics", {}),
-            "latency": report.get("oneway_latency_statistics", {}),
+            "actual_transmission_rate_statistics": report.get(
+                "actual_transmission_rate_statistics", {}
+            ),
+            "publish_duration_statistics": report.get(
+                "publish_duration_statistics", {}
+            ),
+            "serialization_duration_statistics": report.get(
+                "serialization_duration_statistics", {}
+            ),
+            "processing_rate_statistics": report.get("processing_rate_statistics", {}),
+            "handle_duration_statistics": report.get("handle_duration_statistics", {}),
+            "decode_duration_statistics": report.get("decode_duration_statistics", {}),
+            "oneway_latency_statistics": report.get("oneway_latency_statistics", {}),
         }
 
         # flatten into base row
@@ -48,15 +53,15 @@ def load_reports(input_folder: Path) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def plot_percentiles(df: pd.DataFrame, output_folder: Path):
+def plot_percentiles(df: pd.DataFrame, output_dir: Path, show: bool):
     metrics_labels = {
-        "pub_rate": "Publisher Rate (Hz)",
-        "sub_rate": "Subscriber Rate (Hz)",
-        "pub_dur": "Publish Duration (ms)",
-        "ser": "Serialization Duration (ms)",
-        "handle": "Handle Duration (ms)",
-        "decode": "Decode Duration (ms)",
-        "latency": "One-way Latency (ms)",
+        "actual_transmission_rate_statistics": "Publisher Rate (Hz)",
+        "processing_rate_statistics": "Subscriber Response Rate (Hz)",
+        "publish_duration_statistics": "Publish Duration (ms)",
+        "serialization_duration_statistics": "Serialization Duration (ms)",
+        "handle_duration_statistics": "Handle Duration (ms)",
+        "decode_duration_statistics": "Decode Duration (ms)",
+        "oneway_latency_statistics": "One-way Latency (ms)",
     }
     percentiles = ["p50", "p90"]
 
@@ -86,8 +91,9 @@ def plot_percentiles(df: pd.DataFrame, output_folder: Path):
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
-            plt.savefig(output_folder / f"{key}_{perc}_vs_msg_size.png")
-            plt.show()
+            plt.savefig(output_dir / f"{key}_{perc}_vs_msg_size.png")
+            if show:
+                plt.show()
             plt.close()
 
 
@@ -96,33 +102,32 @@ def main():
         description="Aggregate LCM/eCAL benchmark reports and plot p50/p90 stats"
     )
     parser.add_argument(
-        "--input-folder",
+        "input_dir",
         type=Path,
-        default=Path("./results"),
         help="Directory containing YAML benchmark reports",
     )
     parser.add_argument(
-        "--output-folder",
+        "output_dir",
         type=Path,
-        default=Path("./results"),
         help="Directory to write aggregated CSV and plots",
     )
+    parser.add_argument("--show", action="store_true", default=False)
     args = parser.parse_args()
 
-    args.output_folder.mkdir(parents=True, exist_ok=True)
-    df = load_reports(args.input_folder)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    df = load_reports(args.input_dir)
     if df.empty:
-        print(f"No valid reports found in {args.input_folder}")
+        print(f"No valid reports found in {args.input_dir}")
         return
 
     # 1) Write aggregated CSV
-    csv_file = args.output_folder / "aggregated.csv"
+    csv_file = args.output_dir / "aggregated.csv"
     df.to_csv(csv_file, index=False)
     print(f"Saved aggregated data to {csv_file}")
 
     # 2) Plot separate p50 & p90 plots for each metric
-    plot_percentiles(df, args.output_folder)
-    print(f"Plots saved to {args.output_folder}")
+    plot_percentiles(df, args.output_dir, show=args.show)
+    print(f"Plots saved to {args.output_dir}")
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ echo "Using interpreter: ${PYTHON_INTERPRETER}"
 echo "------------------------------------------------------------------------------------------------------------------------------"
 
 echo "Running LCM publishing benchmark"
-for SIZE_KIB in 1 2 4 8 16 32 64 128; do
+for SIZE_KIB in 1 2 4 8 16 32 64 128 256 512 1024; do
   BYTES="$(${PYTHON_INTERPRETER} -c "print(${SIZE_KIB} * 1024)")"
   echo " • ${SIZE_KIB} KiB payload → ${NUM_MSGS} msgs @ ${TRANSMISSION_RATE} Hz"
   ${PYTHON_INTERPRETER} benchmark_publisher.py \
@@ -34,7 +34,7 @@ done
 
 echo "------------------------------------------------------------------------------------------------------------------------------"
 echo "Running eCAL publishing benchmark"
-for SIZE_KIB in 1 2 4 8 16 32 64 128; do
+for SIZE_KIB in 1 2 4 8 16 32 64 128 256 512 1024; do
   BYTES="$(${PYTHON_INTERPRETER} -c "print(${SIZE_KIB} * 1024)")"
   echo " • ${SIZE_KIB} KiB payload → ${NUM_MSGS} msgs @ ${TRANSMISSION_RATE} Hz"
   ${PYTHON_INTERPRETER} benchmark_publisher.py \

@@ -9,7 +9,7 @@
 NUM_MSGS="${1:-51}"
 RESULTS_DIR="${3:-/tmp/subscriber-benchmark-results/}"
 PYTHON_INTERPRETER="${3:-python3}"
-SLEEP_TIME="${4:-2s}"
+SLEEP_TIME="${4:-1s}"
 
 echo "Important: Make sure you run run-publisher-benchmark.bash first."
 echo "First message in each run is ignored in saved reports due to setup overhead."
@@ -22,8 +22,8 @@ echo
 for MIDDLEWARE in lcm ecal; do
   echo "------------------------------------------------------------------------------------------------------------------------------"
   echo "Running ${MIDDLEWARE^^} subscription benchmark"
-  for i in {1..8}; do
-    echo " • [${i}/8] subscribe to ${NUM_MSGS} messages via ${MIDDLEWARE}"
+  for i in {1..11}; do
+    echo " • [${i}/11] subscribe to ${NUM_MSGS} messages via ${MIDDLEWARE}"
     "${PYTHON_INTERPRETER}" benchmark_subscriber.py \
       --middleware "${MIDDLEWARE}" \
       --num-msgs "${NUM_MSGS}" \
